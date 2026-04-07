@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expedição SPA1 - XPT</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    databaseURL: "https://appxptpm-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window._firebaseDB = db;
+  window._firebaseRef = ref;
+  window._firebaseSet = set;
+  window._firebaseGet = get;
+  window._firebaseOnValue = onValue;
+
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #151820;
+  --surface2: #1c2030;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8eaf2;
+  --muted: #7a7f96;
+  --accent: #3d7fff;
+  --accent2: #00d4aa;
+  --danger: #ff4d6a;
+  --warning: #ffb840;
+  --success: #00d4aa;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+/* ── LIGHT THEME ── */
+body.light {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #e8ebf2;
+  --border: rgba(0,0,0,0.09);
+  --text: #1a1d2e;
+  --muted: #6b708a;
+  --accent: #2563eb;
+  --accent2: #059669;
+  --danger: #e02348;
+  --warning: #d97706;
+  --success: #059669;
+}
+
+body.light::before {
+  background-image:
+    linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(61,127,255,0.2);
+}
+
+body.light .live-dot::before { background: #059669; box-shadow: 0 0 8px #059669; }
+body.light input[type="text"], body.light select, body.light textarea { background: #fff; color: var(--text); }
+body.light .modal { background: #fff; }
+body.light .move-menu { background: #fff; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── BACKGROUND GRID ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(61,127,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61,127,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 16px; }
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-left h1 {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #fff 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.header-left p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.header-right {
+  text-align: right;
+}
+
+.analyst-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent2);
+  background: rgba(0,212,170,0.08);
+  border: 1px solid rgba(0,212,170,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.live-dot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── META ROW ── */
+.meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* ── ACTION BAR ── */
+.action-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #5590ff; box-shadow: 0 0 16px rgba(61,127,255,0.35); }
+
+.btn-danger { background: rgba(255,77,106,0.15); color: var(--danger); border: 1px solid rgba(255,77,106,0.25); }
+.btn-danger:hover { background: rgba(255,77,106,0.25); }
+
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: #252a3a; border-color: rgba(255,255,255,0.14); }
+
+.btn-success { background: rgba(0,212,170,0.15); color: var(--accent2); border: 1px solid rgba(0,212,170,0.25); }
+.btn-success:hover { background: rgba(0,212,170,0.25); }
+
+.btn-whatsapp { background: #25D366; color: #fff; font-size: 14px; font-weight: 700; padding: 12px; width: 100%; }
+.btn-whatsapp:hover { background: #20bd5a; }
+
+.btn-sm { padding: 5px 9px; font-size: 12px; }
+.btn-full { width: 100%; }
+
+/* ── INPUTS ── */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+input[type="text"], select, textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="text"]:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(61,127,255,0.12);
+}
+
+select option { background: var(--surface2); }
+textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
+
+/* ── OCR UPLOAD ── */
+.upload-zone {
+  border: 2px dashed rgba(61,127,255,0.25);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(61,127,255,0.03);
+  margin-bottom: 16px;
+}
+
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(61,127,255,0.07); }
+.upload-zone p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+#file-input { display: none; }
+#preview-img { max-width: 100%; max-height: 220px; border-radius: var(--radius); margin-top: 10px; display: none; }
+
+/* ── ROTA CARDS ── */
+.rotas-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+
+.rota-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  border-left: 5px solid;
+  background: var(--surface);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.rota-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+
+.rota-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+
+.rota-header:hover { background: rgba(255,255,255,0.02); }
+
+.rota-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+
+.rota-id {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.rota-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+}
+
+.badge-ilha { background: rgba(255,255,255,0.06); color: var(--text); }
+.badge-local { background: rgba(61,127,255,0.12); color: #7aaeff; }
+.badge-hora { background: rgba(255,184,64,0.12); color: var(--warning); }
+.badge-count { background: rgba(0,212,170,0.1); color: var(--accent2); }
+
+.rota-toggle { color: var(--muted); font-size: 18px; transition: transform 0.2s; flex-shrink: 0; }
+.rota-toggle.open { transform: rotate(180deg); }
+
+.rota-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+
+.rota-body.open { display: block; }
+
+.rota-fields {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+  margin-bottom: 14px;
+}
+
+/* ── VEHICLE ROWS ── */
+.veiculo-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 1fr auto auto;
+  gap: 8px;
+  align-items: end;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.veiculo-row:last-child { border-bottom: none; }
+
+/* STATUS COLORS */
+.status-Pendente { color: var(--warning); }
+.status-Finalizado { color: var(--success); }
+.status-Cancelado { color: var(--danger); }
+.status-Em\ Carregamento { color: #a78bfa; }
+.status-Aguardando\ Carregamento { color: #60a5fa; }
+
+/* ── MOVE DROPDOWN ── */
+.move-wrap { position: relative; }
+
+.move-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  z-index: 100;
+  min-width: 100px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: none;
+}
+
+.move-menu.open { display: block; }
+.move-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; font-size: 12px; font-weight: 600; font-family: var(--font-mono); }
+
+/* ── WHATSAPP SECTION ── */
+.wa-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.wa-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  color: #25D366;
+}
+
+.wa-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  display: none;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 320px;
+  max-width: 90vw;
+}
+
+.modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.modal-actions button { flex: 1; }
+
+/* ── TOAST ── */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.6s forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 300px;
+}
+
+@keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+@keyframes fadeOut { from { opacity:1; } to { opacity:0; transform: translateY(8px); } }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* ── SPINNER ── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .action-bar { grid-template-columns: 1fr 1fr; }
+  .action-bar > *:last-child { grid-column: 1 / -1; }
+  .meta-row { grid-template-columns: 1fr; }
+  .wa-btns { grid-template-columns: 1fr; }
+  .veiculo-row { grid-template-columns: 1fr 55px 1fr auto auto; }
+  .rota-fields { grid-template-columns: 70px 1fr auto; }
+  .header-left h1 { font-size: 1.8rem; }
+}
+
+/* ── OCR SECTION ── */
+.ocr-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ocr-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>📦 XPT SPA1</h1>
+      <p>Controle de Carregamento PM/MM</p>
+    </div>
+    <div class="header-right" style="display:flex;align-items:center;gap:10px;">
+      <button class="theme-toggle" id="theme-btn" onclick="alternarTema()" title="Alternar tema">🌙</button>
+      <div>
+        <div class="analyst-tag">⚡ Analista:Ezequiel Miranda</div>
+        <div class="live-dot">Sincronizado em tempo real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- META -->
+  <div class="meta-row">
+    <div class="field">
+      <label>Título do Carregamento</label>
+      <input type="text" id="titulo" value="CARREGAMENTO PM" oninput="salvarMeta()">
+    </div>
+    <div class="field">
+      <label>Data</label>
+      <input type="text" id="data-input" oninput="salvarMeta()">
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="btn btn-primary btn-full" onclick="sincronizar()">🔄 Sincronizar</button>
+    <button class="btn btn-danger btn-full" onclick="limparTudo()">🗑️ Limpar Tudo</button>
+    <button class="btn btn-secondary btn-full" onclick="abrirModalRota()">➕ Nova Rota</button>
+  </div>
+
+  <!-- OCR SECTION -->
+  <div class="ocr-section">
+    <h3>📷 Extração OCR por Imagem</h3>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+      <div style="font-size:28px">🖼️</div>
+      <p>Clique ou arraste uma imagem para extrair dados automaticamente</p>
+      <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
+      <img id="preview-img" alt="Preview">
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-ocr" onclick="executarOCR()" style="display:none">🔍 EXTRAIR DADOS</button>
+    <div id="ocr-status" style="margin-top:8px; font-size:12px; color:var(--muted); display:none;"></div>
+  </div>
+
+  <!-- ROTAS -->
+  <div class="rotas-list" id="rotas-list"></div>
+
+  <!-- WHATSAPP -->
+  <div class="wa-section">
+    <h2>📲 Texto para WhatsApp</h2>
+    <div class="wa-btns">
+      <button class="btn btn-success btn-full" onclick="marcarInicio()">▶️ Marcar INICIO</button>
+      <button class="btn btn-secondary btn-full" onclick="marcarFim()">🏁 Marcar FIM</button>
+      <button class="btn btn-secondary btn-full" onclick="resetarCiclo()">🔄 Resetar Ciclo</button>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Texto Gerado</label>
+      <textarea id="wa-texto" rows="50" readonly></textarea>
+    </div>
+    <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
+  </div>
+
+</div>
+
+<!-- MODAL NOVA ROTA -->
+<div class="modal-overlay" id="modal-rota">
+  <div class="modal">
+    <h3>➕ Adicionar Nova Rota</h3>
+    <div class="field" style="margin-bottom:10px;">
+      <label>ID da Rota</label>
+      <input type="text" id="nova-rota-id" placeholder="ex: EPA9" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <div class="field">
+      <label>Cidade</label>
+      <input type="text" id="nova-rota-cidade" placeholder="ex: TUCURUI" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="adicionarRota()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let dados = {};
+let horarioInicio = "";
+let cicloFinalizado = false;
+let db, fireRef, fireSet, fireGet, fireOnValue;
+let firebaseReady = false;
+
+const ORDEM_FIXA = ["EPA4","EPA5","ETO4","EPA7","EPA3","EPA8"];
+const CORES = ["#e57373","#64b5f6","#81c784","#ffb74d","#ba68c8","#4db6ac","#f06292","#fff176"];
+const STATUS_OPCOES = ["Pendente","Finalizado","Em Carregamento","Cancelado","Aguardando Carregamento"];
+
+const DADOS_PADRAO = {
+  "EPA4": {local:"MARABA",      janela:"12:00 às 14:00", letra:"?", veiculos:[]},
+  "EPA5": {local:"GOIANESIA",   janela:"12:00 às 14:00", letra:"?", veiculos:[]},
+  "ETO4": {local:"PARAUAPEBAS", janela:"13:30 às 15:30", letra:"?", veiculos:[]},
+  "EPA7": {local:"CANAA",       janela:"13:30 às 15:30", letra:"?", veiculos:[]},
+  "EPA3": {local:"PARAGOMINAS", janela:"14:30 às 16:30", letra:"?", veiculos:[]},
+  "EPA8": {local:"MAE DO RIO",  janela:"14:30 às 16:30", letra:"?", veiculos:[]},
+};
+
+// ═══════════════════════════════════════════════════════
+//  DATE
+// ═══════════════════════════════════════════════════════
+function dataHoje() {
+  const d = new Date();
+  const tz = d.toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric'});
+  return tz;
+}
+
+// ═══════════════════════════════════════════════════════
+//  FIREBASE INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('firebase-ready', () => {
+  db = window._firebaseDB;
+  fireRef = window._firebaseRef;
+  fireSet = window._firebaseSet;
+  fireGet = window._firebaseGet;
+  fireOnValue = window._firebaseOnValue;
+  firebaseReady = true;
+
+  // Listen for real-time changes
+  fireOnValue(fireRef(db, 'expedicao/config'), (snapshot) => {
+    const val = snapshot.val();
+    if (val) {
+      dados = organizarDados(val);
+      renderRotas();
+      gerarTextoWA();
+    }
+  });
+
+  fireOnValue(fireRef(db, 'expedicao/meta'), (snapshot) => {
+    const val = snapshot.val();
+    if (val) {
+      if (val.titulo) document.getElementById('titulo').value = val.titulo;
+      if (val.data) document.getElementById('data-input').value = val.data;
+      if (val.horarioInicio !== undefined) horarioInicio = val.horarioInicio;
+      if (val.cicloFinalizado !== undefined) cicloFinalizado = val.cicloFinalizado;
+      gerarTextoWA();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  FIREBASE HELPERS
+// ═══════════════════════════════════════════════════════
+async function salvarNaFirebase() {
+  if (!firebaseReady) return;
+  try {
+    await fireSet(fireRef(db, 'expedicao/config'), dados);
+  } catch(e) { console.error(e); }
+}
+
+async function salvarMeta() {
+  if (!firebaseReady) return;
+  try {
+    await fireSet(fireRef(db, 'expedicao/meta'), {
+      titulo: document.getElementById('titulo').value,
+      data: document.getElementById('data-input').value,
+      horarioInicio,
+      cicloFinalizado
+    });
+  } catch(e) { console.error(e); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DATA HELPERS
+// ═══════════════════════════════════════════════════════
+function organizarDados(raw) {
+  const out = {};
+  for (const r of ORDEM_FIXA) if (r in raw) out[r] = raw[r];
+  for (const r in raw) if (!(r in out)) out[r] = raw[r];
+  // ensure veiculos array
+  for (const r in out) {
+    if (!Array.isArray(out[r].veiculos)) out[r].veiculos = [];
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SYNC / CLEAR
+// ═══════════════════════════════════════════════════════
+async function sincronizar() {
+  toast("🔄 Sincronizando...");
+  // onValue listener already handles live updates
+  toast("☁️ Sincronizado com sucesso! ✅");
+}
+
+async function limparTudo() {
+  if (!confirm("Tem certeza que deseja limpar todos os dados?")) return;
+  for (const r in dados) {
+    dados[r].veiculos = [];
+    dados[r].letra = "?";
+  }
+  horarioInicio = "";
+  cicloFinalizado = false;
+  await salvarNaFirebase();
+  await salvarMeta();
+  renderRotas();
+  gerarTextoWA();
+  toast("🗑️ Dados limpos com sucesso!");
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER ROTAS
+// ═══════════════════════════════════════════════════════
+function renderRotas() {
+  const container = document.getElementById('rotas-list');
+  // Preserve open state
+  const openSet = new Set();
+  container.querySelectorAll('.rota-body.open').forEach(b => openSet.add(b.dataset.rota));
+
+  container.innerHTML = '';
+
+  Object.entries(dados).forEach(([rota, info], idx) => {
+    const cor = CORES[idx % CORES.length];
+    const isOpen = openSet.has(rota);
+
+    const card = document.createElement('div');
+    card.className = 'rota-card';
+    card.style.borderLeftColor = cor;
+
+    const countValid = info.veiculos.filter(v => v.placa && v.placa.trim()).length;
+
+    card.innerHTML = `
+      <div class="rota-header" onclick="toggleRota('${rota}')">
+        <div class="rota-info">
+          <span class="rota-id" style="color:${cor}">${rota}</span>
+          <div class="rota-badges">
+            <span class="badge badge-ilha">Ilha: ${info.letra || '?'}</span>
+            <span class="badge badge-local">📍 ${info.local}</span>
+            <span class="badge badge-hora">⏰ ${info.janela}</span>
+            ${countValid > 0 ? `<span class="badge badge-count">🚚 ${countValid}</span>` : ''}
+          </div>
+        </div>
+        <span class="rota-toggle ${isOpen ? 'open' : ''}">▾</span>
+      </div>
+      <div class="rota-body ${isOpen ? 'open' : ''}" data-rota="${rota}">
+        <div class="rota-fields">
+          <div class="field">
+            <label>Ilha</label>
+            <input type="text" value="${info.letra || '?'}" oninput="atualizarIlha('${rota}', this.value)" style="text-transform:uppercase">
+          </div>
+          <div class="field">
+            <label>Janela Horária</label>
+            <input type="text" value="${info.janela}" oninput="atualizarJanela('${rota}', this.value)">
+          </div>
+          <div class="field" style="padding-top:18px;">
+            <button class="btn btn-success btn-sm" onclick="adicionarVeiculo('${rota}')">➕ Placa</button>
+          </div>
+        </div>
+        <div id="veiculos-${rota}">
+          ${renderVeiculos(rota, info.veiculos)}
+        </div>
+        <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+          <button class="btn btn-danger btn-sm" onclick="removerRota('${rota}')">🗑️ Remover Rota</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderVeiculos(rota, veiculos) {
+  if (!veiculos || veiculos.length === 0) return '<p style="color:var(--muted);font-size:12px;padding:8px 0;">Nenhum veículo cadastrado.</p>';
+
+  return veiculos.map((v, idx) => {
+    const statusEmoji = {
+      'Pendente': '🟡',
+      'Finalizado': '✅',
+      'Cancelado': '❌',
+      'Em Carregamento': '⏳',
+      'Aguardando Carregamento': '🕑'
+    }[v.status] || '🟡';
+
+    const statusOptions = STATUS_OPCOES.map(s =>
+      `<option value="${s}" ${v.status === s ? 'selected' : ''}>${statusEmoji} ${s}</option>`
+    ).join('');
+
+    const destinos = Object.keys(dados)
+      .filter(r => r !== rota)
+      .map(r => `<button class="btn btn-secondary btn-sm" onclick="moverVeiculo('${rota}', ${idx}, '${r}')">${r}</button>`)
+      .join('');
+
+    return `
+      <div class="veiculo-row" id="vrow-${rota}-${idx}">
+        <div class="field">
+          <label>Placa</label>
+          <input type="text" value="${v.placa || ''}" placeholder="ABC1D23" oninput="atualizarPlaca('${rota}', ${idx}, this.value)" style="font-family:var(--font-mono); text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Doca</label>
+          <input type="text" value="${v.doca || ''}" placeholder="D1" oninput="atualizarDoca('${rota}', ${idx}, this.value)" style="font-family:var(--font-mono); text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select onchange="atualizarStatus('${rota}', ${idx}, this.value)">
+            ${statusOptions}
+          </select>
+        </div>
+        <div class="field" style="padding-top:18px;">
+          <div class="move-wrap">
+            <button class="btn btn-secondary btn-sm" onclick="toggleMove('${rota}', ${idx})" title="Mover para rota">🔄</button>
+            <div class="move-menu" id="move-${rota}-${idx}">
+              ${destinos}
+            </div>
+          </div>
+        </div>
+        <div class="field" style="padding-top:18px;">
+          <button class="btn btn-danger btn-sm" onclick="removerVeiculo('${rota}', ${idx})">❌</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleRota(rota) {
+  const body = document.querySelector(`.rota-body[data-rota="${rota}"]`);
+  const toggle = body?.previousElementSibling?.querySelector('.rota-toggle');
+  if (body) {
+    body.classList.toggle('open');
+    toggle?.classList.toggle('open');
+  }
+}
+
+function toggleMove(rota, idx) {
+  document.querySelectorAll('.move-menu.open').forEach(m => {
+    if (m.id !== `move-${rota}-${idx}`) m.classList.remove('open');
+  });
+  document.getElementById(`move-${rota}-${idx}`)?.classList.toggle('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.move-wrap')) {
+    document.querySelectorAll('.move-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  DATA UPDATES
+// ═══════════════════════════════════════════════════════
+let debounceTimer = null;
+function debounceSave() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => { salvarNaFirebase(); gerarTextoWA(); }, 700);
+}
+
+function atualizarIlha(rota, val) {
+  dados[rota].letra = val.toUpperCase();
+  // update badge
+  const card = document.querySelector(`[data-rota="${rota}"]`)?.closest('.rota-card');
+  if (card) card.querySelector('.badge-ilha').textContent = 'Ilha: ' + val.toUpperCase();
+  debounceSave();
+}
+
+function atualizarJanela(rota, val) {
+  dados[rota].janela = val;
+  const card = document.querySelector(`[data-rota="${rota}"]`)?.closest('.rota-card');
+  if (card) card.querySelector('.badge-hora').textContent = '⏰ ' + val;
+  debounceSave();
+}
+
+function atualizarPlaca(rota, idx, val) {
+  dados[rota].veiculos[idx].placa = val.toUpperCase();
+  debounceSave();
+}
+
+function atualizarDoca(rota, idx, val) {
+  dados[rota].veiculos[idx].doca = val.toUpperCase();
+  debounceSave();
+}
+
+function atualizarStatus(rota, idx, val) {
+  dados[rota].veiculos[idx].status = val;
+  if (val === 'Finalizado') {
+    const now = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
+    dados[rota].veiculos[idx].hora_finalizacao = now;
+  } else {
+    delete dados[rota].veiculos[idx].hora_finalizacao;
+  }
+  salvarNaFirebase();
+  gerarTextoWA();
+}
+
+function adicionarVeiculo(rota) {
+  dados[rota].veiculos.push({placa:"", status:"Pendente", doca:""});
+  const container = document.getElementById(`veiculos-${rota}`);
+  if (container) container.innerHTML = renderVeiculos(rota, dados[rota].veiculos);
+  salvarNaFirebase();
+}
+
+function removerVeiculo(rota, idx) {
+  dados[rota].veiculos.splice(idx, 1);
+  const container = document.getElementById(`veiculos-${rota}`);
+  if (container) container.innerHTML = renderVeiculos(rota, dados[rota].veiculos);
+  salvarNaFirebase();
+  gerarTextoWA();
+}
+
+function moverVeiculo(rotaOrigem, idx, rotaDest) {
+  const v = {...dados[rotaOrigem].veiculos[idx]};
+  dados[rotaOrigem].veiculos.splice(idx, 1);
+  dados[rotaDest].veiculos.push(v);
+  renderRotas();
+  salvarNaFirebase();
+  gerarTextoWA();
+  toast(`🔄 Veículo movido para ${rotaDest}`);
+}
+
+function removerRota(rota) {
+  if (!confirm(`Remover a rota ${rota}?`)) return;
+  delete dados[rota];
+  renderRotas();
+  salvarNaFirebase();
+  gerarTextoWA();
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODAL NOVA ROTA
+// ═══════════════════════════════════════════════════════
+function abrirModalRota() { document.getElementById('modal-rota').classList.add('open'); }
+function fecharModal() { document.getElementById('modal-rota').classList.remove('open'); }
+
+function adicionarRota() {
+  const id = document.getElementById('nova-rota-id').value.trim().toUpperCase();
+  const cidade = document.getElementById('nova-rota-cidade').value.trim().toUpperCase();
+  if (!id || !cidade) { toast("⚠️ Preencha ID e Cidade."); return; }
+  dados[id] = {local: cidade, janela:"00:00 às 00:00", letra:"?", veiculos:[]};
+  fecharModal();
+  document.getElementById('nova-rota-id').value = '';
+  document.getElementById('nova-rota-cidade').value = '';
+  renderRotas();
+  salvarNaFirebase();
+  toast(`✅ Rota ${id} adicionada!`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  WHATSAPP
+// ═══════════════════════════════════════════════════════
+function marcarInicio() {
+  horarioInicio = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
+  salvarMeta(); gerarTextoWA();
+  toast(`▶️ Início: ${horarioInicio}`);
+}
+
+function marcarFim() {
+  cicloFinalizado = true;
+  salvarMeta(); gerarTextoWA();
+  toast("🏁 Ciclo finalizado!");
+}
+
+function resetarCiclo() {
+  horarioInicio = ""; cicloFinalizado = false;
+  salvarMeta(); gerarTextoWA();
+  toast("🔄 Ciclo resetado.");
+}
+
+function gerarTextoWA() {
+  const titulo = document.getElementById('titulo')?.value || 'CARREGAMENTO PM';
+  const data = document.getElementById('data-input')?.value || '';
+  let txt = `*${titulo} ${data}*\n`;
+  if (horarioInicio) txt += `INICIO: ${horarioInicio}\n`;
+  txt += '\n';
+
+  let temPlaca = false;
+  for (const [rota, info] of Object.entries(dados)) {
+    const validos = (info.veiculos || []).filter(v => v.placa && v.placa.trim());
+    if (validos.length === 0) continue;
+    temPlaca = true;
+    txt += `*${rota}* (${info.local}) (${info.janela})\nLetra: *${info.letra || '?'}*\n`;
+    for (const v of validos) {
+      const se = {
+        'Pendente': '🟡',
+        'Finalizado': `✅ ${v.hora_finalizacao || ''}`,
+        'Cancelado': '❌',
+        'Aguardando Carregamento': '🕑',
+        'Em Carregamento': '⏳'
+      }[v.status] || '🟡';
+      const doca = v.doca ? ` [Doca: ${v.doca}]` : '';
+      txt += `🚚 ${v.placa}${doca} - ${v.status} ${se}\n`;
+    }
+    txt += '\n';
+  }
+
+  if (cicloFinalizado) txt += 'CICLO PM_MM FINALIZADO ✅\n';
+
+  const area = document.getElementById('wa-texto');
+  if (area) area.value = txt;
+}
+
+function copiarWhatsApp() {
+  const txt = document.getElementById('wa-texto').value;
+  navigator.clipboard.writeText(txt).then(() => toast("✅ Texto copiado para área de transferência!"));
+}
+
+// ═══════════════════════════════════════════════════════
+//  OCR (via Tesseract.js CDN — simulated extraction)
+// ═══════════════════════════════════════════════════════
+let imgOCR = null;
+
+function handleFile(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = document.getElementById('preview-img');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    document.getElementById('btn-ocr').style.display = 'block';
+    imgOCR = ev.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
+function dragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag'); }
+function dragLeave() { document.getElementById('upload-zone').classList.remove('drag'); }
+function dropFile(e) {
+  e.preventDefault();
+  dragLeave();
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    document.getElementById('file-input').files = dt.files;
+    handleFile({target: {files: [f]}});
+  }
+}
+
+async function executarOCR() {
+  if (!imgOCR) return;
+  const status = document.getElementById('ocr-status');
+  const btn = document.getElementById('btn-ocr');
+  btn.innerHTML = '<span class="spinner"></span> Processando...';
+  btn.disabled = true;
+  status.style.display = 'block';
+  status.textContent = '🔍 Carregando motor OCR...';
+
+  try {
+    // Load Tesseract.js dynamically
+    if (!window.Tesseract) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    status.textContent = '🔍 Reconhecendo texto...';
+
+    const result = await Tesseract.recognize(imgOCR, 'por', {
+      logger: m => { if (m.status === 'recognizing text') status.textContent = `🔍 ${Math.round(m.progress*100)}%`; }
+    });
+
+    const fullText = result.data.text.toUpperCase();
+    const lines = fullText.split('\n').map(l => l.trim()).filter(l => l);
+
+    // Pattern matching (replicating Python logic in JS)
+    const padPlaca = /[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/;
+    const padXPT = /XPT[\s\-]+([A-Z]{3}[0-9])/;
+
+    let extraidos = 0;
+
+    for (const line of lines) {
+      const mXPT = padXPT.exec(line);
+      if (mXPT) {
+        const rota = mXPT[1];
+        if (dados[rota]) {
+          const tokens = line.split(/\s+/);
+          for (const tok of tokens) {
+            const limpo = tok.replace(/[^A-Z]/g,'');
+            if (limpo.length === 1 && /[A-Z]/.test(limpo)) {
+              dados[rota].letra = limpo;
+              extraidos++;
+              break;
+            }
+          }
+        }
+        continue;
+      }
+
+      // Check for route ID or city name
+      let rotaVinculada = null;
+      for (const [id, info] of Object.entries(dados)) {
+        if (line.includes(id) || line.includes(info.local.toUpperCase())) {
+          rotaVinculada = id; break;
+        }
+      }
+
+      if (rotaVinculada) {
+        const tokens = line.split(/\s+/);
+        for (const tok of tokens) {
+          const limpo = tok.replace(/[^A-Z]/g,'').replace('XPT','');
+          if (limpo.length >= 1 && limpo.length <= 2) {
+            dados[rotaVinculada].letra = limpo;
+            break;
+          }
+        }
+        const clean = line.replace(/\s/g,'').replace(/-/g,'');
+        const mPlaca = padPlaca.exec(clean);
+        if (mPlaca) {
+          const placa = mPlaca[0];
+          if (!dados[rotaVinculada].veiculos.some(v => v.placa === placa)) {
+            dados[rotaVinculada].veiculos.push({placa, status:"Pendente", doca:""});
+            extraidos++;
+          }
+        }
+      }
+    }
+
+    await salvarNaFirebase();
+    renderRotas();
+    gerarTextoWA();
+    status.textContent = `✅ Extração concluída! ${extraidos} item(ns) encontrado(s).`;
+    toast(`✅ OCR concluído: ${extraidos} item(ns) extraído(s)`);
+  } catch(e) {
+    console.error(e);
+    status.textContent = '❌ Erro na extração OCR.';
+    toast("❌ Erro no OCR. Tente novamente.");
+  } finally {
+    btn.innerHTML = '🔍 EXTRAIR DADOS';
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TEMA
+// ═══════════════════════════════════════════════════════
+function alternarTema() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('tema', isLight ? 'light' : 'dark');
+}
+
+function aplicarTemaInicial() {
+  const salvo = localStorage.getItem('tema');
+  const prefereClaro = window.matchMedia('(prefers-color-scheme: light)').matches;
+  const usar = salvo || (prefereClaro ? 'light' : 'dark');
+  if (usar === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('theme-btn').textContent = '☀️';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3100);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  aplicarTemaInicial();
+  // Set today's date
+  document.getElementById('data-input').value = new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'});
+
+  // If firebase not ready in 3s, load default data
+  setTimeout(() => {
+    if (Object.keys(dados).length === 0) {
+      dados = organizarDados(JSON.parse(JSON.stringify(DADOS_PADRAO)));
+      renderRotas();
+      gerarTextoWA();
+    }
+  }, 3000);
+});
+
+// Close modal on overlay click
+document.getElementById('modal-rota').addEventListener('click', function(e) {
+  if (e.target === this) fecharModal();
+});
+</script>
+</body>
+</html>
