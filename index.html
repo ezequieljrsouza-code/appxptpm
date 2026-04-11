@@ -535,7 +535,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     <div class="header-right" style="display:flex;align-items:center;gap:10px;">
       <button class="theme-toggle" id="theme-btn" onclick="alternarTema()" title="Alternar tema">🌙</button>
       <div>
-        <div class="analyst-tag">⚡ Analista:Ezequiel Miranda</div>
+        <div class="analyst-tag">⚡ Ezequiel Miranda</div>
         <div class="live-dot">Sincronizado em tempo real</div>
       </div>
     </div>
@@ -545,11 +545,11 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
   <div class="meta-row">
     <div class="field">
       <label>Título do Carregamento</label>
-      <input type="text" id="titulo" value="CARREGAMENTO PM" oninput="salvarMeta()">
+      <input type="text" id="titulo" value="CARREGAMENTO PM" onblur="salvarMeta()" onkeydown="if(event.key==='Enter')this.blur()">
     </div>
     <div class="field">
       <label>Data</label>
-      <input type="text" id="data-input" oninput="salvarMeta()">
+      <input type="text" id="data-input" onblur="salvarMeta()" onkeydown="if(event.key==='Enter')this.blur()">
     </div>
   </div>
 
@@ -586,7 +586,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Texto Gerado</label>
-      <textarea id="wa-texto" rows="50" readonly></textarea>
+      <textarea id="wa-texto" rows="14" readonly></textarea>
     </div>
     <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
   </div>
@@ -778,11 +778,11 @@ function renderRotas() {
         <div class="rota-fields">
           <div class="field">
             <label>Ilha</label>
-            <input type="text" value="${info.letra || '?'}" oninput="atualizarIlha('${rota}', this.value)" style="text-transform:uppercase">
+            <input type="text" value="${info.letra || '?'}" onblur="atualizarIlha('${rota}', this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="text-transform:uppercase">
           </div>
           <div class="field">
             <label>Janela Horária</label>
-            <input type="text" value="${info.janela}" oninput="atualizarJanela('${rota}', this.value)">
+            <input type="text" value="${info.janela}" onblur="atualizarJanela('${rota}', this.value)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
           <div class="field" style="padding-top:18px;">
             <button class="btn btn-success btn-sm" onclick="adicionarVeiculo('${rota}')">➕ Placa</button>
@@ -825,11 +825,11 @@ function renderVeiculos(rota, veiculos) {
       <div class="veiculo-row" id="vrow-${rota}-${idx}">
         <div class="field">
           <label>Placa</label>
-          <input type="text" value="${v.placa || ''}" placeholder="ABC1D23" oninput="atualizarPlaca('${rota}', ${idx}, this.value)" style="font-family:var(--font-mono); text-transform:uppercase">
+          <input type="text" value="${v.placa || ''}" placeholder="ABC1D23" onblur="atualizarPlaca('${rota}', ${idx}, this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="font-family:var(--font-mono); text-transform:uppercase">
         </div>
         <div class="field">
           <label>Doca</label>
-          <input type="text" value="${v.doca || ''}" placeholder="D1" oninput="atualizarDoca('${rota}', ${idx}, this.value)" style="font-family:var(--font-mono); text-transform:uppercase">
+          <input type="text" value="${v.doca || ''}" placeholder="D1" onblur="atualizarDoca('${rota}', ${idx}, this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="font-family:var(--font-mono); text-transform:uppercase">
         </div>
         <div class="field">
           <label>Status</label>
@@ -881,35 +881,32 @@ document.addEventListener('click', (e) => {
 // ═══════════════════════════════════════════════════════
 //  DATA UPDATES
 // ═══════════════════════════════════════════════════════
-let debounceTimer = null;
-function debounceSave() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => { salvarNaFirebase(); gerarTextoWA(); }, 700);
-}
-
 function atualizarIlha(rota, val) {
   dados[rota].letra = val.toUpperCase();
-  // update badge
   const card = document.querySelector(`[data-rota="${rota}"]`)?.closest('.rota-card');
   if (card) card.querySelector('.badge-ilha').textContent = 'Ilha: ' + val.toUpperCase();
-  debounceSave();
+  salvarNaFirebase();
+  gerarTextoWA();
 }
 
 function atualizarJanela(rota, val) {
   dados[rota].janela = val;
   const card = document.querySelector(`[data-rota="${rota}"]`)?.closest('.rota-card');
   if (card) card.querySelector('.badge-hora').textContent = '⏰ ' + val;
-  debounceSave();
+  salvarNaFirebase();
+  gerarTextoWA();
 }
 
 function atualizarPlaca(rota, idx, val) {
   dados[rota].veiculos[idx].placa = val.toUpperCase();
-  debounceSave();
+  salvarNaFirebase();
+  gerarTextoWA();
 }
 
 function atualizarDoca(rota, idx, val) {
   dados[rota].veiculos[idx].doca = val.toUpperCase();
-  debounceSave();
+  salvarNaFirebase();
+  gerarTextoWA();
 }
 
 function atualizarStatus(rota, idx, val) {
