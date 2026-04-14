@@ -562,7 +562,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
 
   <!-- OCR SECTION -->
   <div class="ocr-section">
-    <h3>📷 Extração Por Imagens</h3>
+    <h3>📷 Extração por IA (Claude Vision)</h3>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
       <div>
         <p style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Imagem 1 — Rotas &amp; Placas</p>
@@ -1141,16 +1141,26 @@ Regras:
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-5-20251001",
         max_tokens: 1000,
         messages
       })
     });
 
     const data = await response.json();
+
+    if (!response.ok) {
+      console.error("API error:", JSON.stringify(data));
+      throw new Error(`API ${response.status}: ${data?.error?.message || 'Erro desconhecido'}`);
+    }
+
     const rawText = (data.content || []).map(b => b.text || '').join('').trim();
+    console.log("Raw AI response:", rawText);
 
     // Strip possible markdown fences
     const jsonStr = rawText.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
@@ -1162,16 +1172,34 @@ Regras:
     if (extracted.rotas) {
       for (const [xpt, info] of Object.entries(extracted.rotas)) {
         if (!dados[xpt]) continue;
-        for (const placa of (info.placas || [])) {
-          const p = placa.trim().toUpperCase();
-          if (p && !dados[xpt].veiculos.some(v => v.placa === p)) {
-            dados[xpt].veiculos.push({ placa: p, status: "Pendente", doca: "" });
+        const placas = (info.placas || []).map(p => p.trim().toUpperCase()).filter(p => p);
+        if (placas.length === 0) {
+          // Route exists in image but has no plates -> mark as NÃO ATRIBUÍDO
+          if (!dados[xpt].veiculos.some(v => v.placa === 'NÃO ATRIBUÍDO')) {
+            dados[xpt].veiculos.push({ placa: 'NÃO ATRIBUÍDO', status: "Pendente", doca: "" });
             extraidos++;
+          }
+        } else {
+          for (const p of placas) {
+            if (!dados[xpt].veiculos.some(v => v.placa === p)) {
+              dados[xpt].veiculos.push({ placa: p, status: "Pendente", doca: "" });
+              extraidos++;
+            }
           }
         }
         // Update local city name if present and still default
         if (info.local && dados[xpt].local === DADOS_PADRAO[xpt]?.local) {
           dados[xpt].local = info.local.toUpperCase();
+        }
+      }
+    }
+
+    // Routes in dados but NOT in extracted.rotas -> mark as NÃO ATRIBUÍDO
+    if (extracted.rotas && imgOCR[1]) {
+      for (const xpt of Object.keys(dados)) {
+        if (!(xpt in extracted.rotas) && dados[xpt].veiculos.length === 0) {
+          dados[xpt].veiculos.push({ placa: 'NÃO ATRIBUÍDO', status: "Pendente", doca: "" });
+          extraidos++;
         }
       }
     }
