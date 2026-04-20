@@ -596,8 +596,8 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
       <input type="text" id="titulo" value="CARREGAMENTO PM" onblur="salvarMeta()" onkeydown="if(event.key==='Enter')this.blur()">
     </div>
     <div class="field">
-      <label>Data</label>
-      <input type="text" id="data-input" onblur="salvarMeta()" onkeydown="if(event.key==='Enter')this.blur()">
+      <label>Data <span style="font-size:10px;font-weight:400;color:var(--accent2);margin-left:4px;">● automática</span></label>
+      <input type="text" id="data-input" readonly style="cursor:default;opacity:0.7;">
     </div>
   </div>
 
@@ -645,7 +645,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Texto Gerado</label>
-      <textarea id="wa-texto" rows="55" readonly></textarea>
+      <textarea id="wa-texto" rows="50" readonly></textarea>
     </div>
     <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
   </div>
@@ -701,9 +701,7 @@ const DADOS_PADRAO = {
 //  DATE
 // ═══════════════════════════════════════════════════════
 function dataHoje() {
-  const d = new Date();
-  const tz = d.toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric'});
-  return tz;
+  return new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
 // ═══════════════════════════════════════════════════════
@@ -731,7 +729,7 @@ window.addEventListener('firebase-ready', () => {
     const val = snapshot.val();
     if (val) {
       if (val.titulo) document.getElementById('titulo').value = val.titulo;
-      if (val.data) document.getElementById('data-input').value = val.data;
+      // data-input is always today — never restored from cloud
       if (val.horarioInicio !== undefined) horarioInicio = val.horarioInicio;
       if (val.cicloFinalizado !== undefined) cicloFinalizado = val.cicloFinalizado;
       gerarTextoWA();
@@ -754,7 +752,7 @@ async function salvarMeta() {
   try {
     await fireSet(fireRef(db, 'expedicao/meta'), {
       titulo: document.getElementById('titulo').value,
-      data: document.getElementById('data-input').value,
+      data: dataHoje(),
       horarioInicio,
       cicloFinalizado
     });
@@ -1278,8 +1276,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ocr-toggle').classList.add('open');
   }
 
-  // Set today's date
-  document.getElementById('data-input').value = new Date().toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'});
+  // Set today's date and schedule refresh at midnight
+  function atualizarData() {
+    document.getElementById('data-input').value = dataHoje();
+    gerarTextoWA();
+  }
+  atualizarData();
+
+  // Refresh at exact midnight (Brasília time)
+  function agendarMeiaNoite() {
+    const agora = new Date();
+    const amanha = new Date(agora);
+    amanha.setDate(amanha.getDate() + 1);
+    amanha.setHours(0, 0, 5, 0); // 00:00:05 para garantir a virada
+    const msAte = amanha - agora;
+    setTimeout(() => { atualizarData(); agendarMeiaNoite(); }, msAte);
+  }
+  agendarMeiaNoite();
 
   // If firebase not ready in 3s, load default data
   setTimeout(() => {
