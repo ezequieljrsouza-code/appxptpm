@@ -707,7 +707,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Texto Gerado</label>
-      <textarea id="wa-texto" rows="56" readonly></textarea>
+      <textarea id="wa-texto" rows="50" readonly></textarea>
     </div>
     <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
   </div>
@@ -717,8 +717,8 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
 <!-- MODAL HORÁRIO FINALIZADO -->
 <div class="time-modal-overlay" id="modal-horario" style="display:none;">
   <div class="time-modal">
-    <h3>✅ Confirmar Finalização</h3>
-    <p>Informe o horário de finalização do veículo:</p>
+    <h3 id="modal-horario-titulo">✅ Confirmar Finalização</h3>
+    <p id="modal-horario-desc">Informe o horário de finalização do veículo:</p>
     <div class="time-input-wrap">
       <input type="time" id="input-horario-fin">
     </div>
@@ -1045,18 +1045,20 @@ function atualizarDoca(rota, idx, val) {
 
 // pending finalizado state
 let _finPendente = null; // { rota, idx, selectEl }
+let _modalHorarioContexto = 'finalizado'; // 'finalizado' | 'inicio'
 
 function atualizarStatus(rota, idx, val, selectEl) {
   if (val === 'Finalizado') {
-    // Store context and open time modal
     _finPendente = { rota, idx, selectEl };
+    _modalHorarioContexto = 'finalizado';
     const agora = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
+    document.getElementById('modal-horario-titulo').textContent = '✅ Confirmar Finalização';
+    document.getElementById('modal-horario-desc').textContent = 'Informe o horário de finalização do veículo:';
     document.getElementById('input-horario-fin').value = agora;
     document.getElementById('modal-horario').style.display = 'flex';
     document.getElementById('input-horario-fin').focus();
     return;
   }
-  // Any other status: apply immediately
   dados[rota].veiculos[idx].status = val;
   delete dados[rota].veiculos[idx].hora_finalizacao;
   salvarNaFirebase();
@@ -1064,14 +1066,23 @@ function atualizarStatus(rota, idx, val, selectEl) {
 }
 
 function confirmarFinalizado() {
+  const horario = document.getElementById('input-horario-fin').value || '';
+  document.getElementById('modal-horario').style.display = 'none';
+
+  if (_modalHorarioContexto === 'inicio') {
+    horarioInicio = horario;
+    salvarMeta();
+    gerarTextoWA();
+    toast(`▶️ Início: ${horario}`);
+    return;
+  }
+
+  // finalizado
   if (!_finPendente) return;
   const { rota, idx } = _finPendente;
-  const horario = document.getElementById('input-horario-fin').value || '';
   dados[rota].veiculos[idx].status = 'Finalizado';
   dados[rota].veiculos[idx].hora_finalizacao = horario;
-  document.getElementById('modal-horario').style.display = 'none';
   _finPendente = null;
-  // Re-render vehicles to reflect new status in select
   const container = document.getElementById(`veiculos-${rota}`);
   if (container) container.innerHTML = renderVeiculos(rota, dados[rota].veiculos);
   salvarNaFirebase();
@@ -1080,8 +1091,7 @@ function confirmarFinalizado() {
 }
 
 function cancelarFinalizado() {
-  if (_finPendente) {
-    // Revert the select back to previous value
+  if (_modalHorarioContexto === 'finalizado' && _finPendente) {
     const { rota, idx, selectEl } = _finPendente;
     if (selectEl) selectEl.value = dados[rota].veiculos[idx].status;
   }
@@ -1145,9 +1155,13 @@ function adicionarRota() {
 //  WHATSAPP
 // ═══════════════════════════════════════════════════════
 function marcarInicio() {
-  horarioInicio = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
-  salvarMeta(); gerarTextoWA();
-  toast(`▶️ Início: ${horarioInicio}`);
+  const agora = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
+  _modalHorarioContexto = 'inicio';
+  document.getElementById('modal-horario-titulo').textContent = '▶️ Confirmar Início';
+  document.getElementById('modal-horario-desc').textContent = 'Informe o horário de início do carregamento:';
+  document.getElementById('input-horario-fin').value = agora;
+  document.getElementById('modal-horario').style.display = 'flex';
+  document.getElementById('input-horario-fin').focus();
 }
 
 function marcarFim() {
