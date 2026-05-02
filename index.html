@@ -408,7 +408,69 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
 
 .wa-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 
-/* ── MODAL ── */
+/* ── TIME PICKER MODAL ── */
+.time-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.time-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 300px;
+  max-width: 90vw;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+}
+
+.time-modal h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.time-modal p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.time-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.time-input-wrap input[type="time"] {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  outline: none;
+}
+
+.time-input-wrap input[type="time"]:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 2px rgba(0,212,170,0.15);
+}
+
+.time-modal-actions { display: flex; gap: 10px; }
+.time-modal-actions button { flex: 1; }
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -645,11 +707,26 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Texto Gerado</label>
-      <textarea id="wa-texto" rows="50" readonly></textarea>
+      <textarea id="wa-texto" rows="14" readonly></textarea>
     </div>
     <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
   </div>
 
+</div>
+
+<!-- MODAL HORÁRIO FINALIZADO -->
+<div class="time-modal-overlay" id="modal-horario" style="display:none;">
+  <div class="time-modal">
+    <h3>✅ Confirmar Finalização</h3>
+    <p>Informe o horário de finalização do veículo:</p>
+    <div class="time-input-wrap">
+      <input type="time" id="input-horario-fin">
+    </div>
+    <div class="time-modal-actions">
+      <button class="btn btn-secondary" onclick="cancelarFinalizado()">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmarFinalizado()">✅ Confirmar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL NOVA ROTA -->
@@ -890,7 +967,7 @@ function renderVeiculos(rota, veiculos) {
         </div>
         <div class="field">
           <label>Status</label>
-          <select onchange="atualizarStatus('${rota}', ${idx}, this.value)">
+          <select onchange="atualizarStatus('${rota}', ${idx}, this.value, this)">
             ${statusOptions}
           </select>
         </div>
@@ -966,16 +1043,50 @@ function atualizarDoca(rota, idx, val) {
   gerarTextoWA();
 }
 
-function atualizarStatus(rota, idx, val) {
-  dados[rota].veiculos[idx].status = val;
+// pending finalizado state
+let _finPendente = null; // { rota, idx, selectEl }
+
+function atualizarStatus(rota, idx, val, selectEl) {
   if (val === 'Finalizado') {
-    const now = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
-    dados[rota].veiculos[idx].hora_finalizacao = now;
-  } else {
-    delete dados[rota].veiculos[idx].hora_finalizacao;
+    // Store context and open time modal
+    _finPendente = { rota, idx, selectEl };
+    const agora = new Date().toLocaleTimeString('pt-BR', {timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'});
+    document.getElementById('input-horario-fin').value = agora;
+    document.getElementById('modal-horario').style.display = 'flex';
+    document.getElementById('input-horario-fin').focus();
+    return;
   }
+  // Any other status: apply immediately
+  dados[rota].veiculos[idx].status = val;
+  delete dados[rota].veiculos[idx].hora_finalizacao;
   salvarNaFirebase();
   gerarTextoWA();
+}
+
+function confirmarFinalizado() {
+  if (!_finPendente) return;
+  const { rota, idx } = _finPendente;
+  const horario = document.getElementById('input-horario-fin').value || '';
+  dados[rota].veiculos[idx].status = 'Finalizado';
+  dados[rota].veiculos[idx].hora_finalizacao = horario;
+  document.getElementById('modal-horario').style.display = 'none';
+  _finPendente = null;
+  // Re-render vehicles to reflect new status in select
+  const container = document.getElementById(`veiculos-${rota}`);
+  if (container) container.innerHTML = renderVeiculos(rota, dados[rota].veiculos);
+  salvarNaFirebase();
+  gerarTextoWA();
+  toast(`✅ Finalizado às ${horario}`);
+}
+
+function cancelarFinalizado() {
+  if (_finPendente) {
+    // Revert the select back to previous value
+    const { rota, idx, selectEl } = _finPendente;
+    if (selectEl) selectEl.value = dados[rota].veiculos[idx].status;
+  }
+  document.getElementById('modal-horario').style.display = 'none';
+  _finPendente = null;
 }
 
 function adicionarVeiculo(rota) {
@@ -1307,6 +1418,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // Close modal on overlay click
 document.getElementById('modal-rota').addEventListener('click', function(e) {
   if (e.target === this) fecharModal();
+});
+
+document.getElementById('modal-horario').addEventListener('click', function(e) {
+  if (e.target === this) cancelarFinalizado();
+});
+
+document.getElementById('input-horario-fin').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') confirmarFinalizado();
+  if (e.key === 'Escape') cancelarFinalizado();
 });
 </script>
 </body>
