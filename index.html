@@ -11,7 +11,7 @@
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
-    databaseURL: "https://appxptpm-default-rtdb.firebaseio.com"
+    databaseURL: "https://expedicao-spa1-default-rtdb.firebaseio.com"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -707,7 +707,7 @@ textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Texto Gerado</label>
-      <textarea id="wa-texto" rows="50" readonly></textarea>
+      <textarea id="wa-texto" rows="14" readonly></textarea>
     </div>
     <button class="btn btn-whatsapp" onclick="copiarWhatsApp()">📋 COPIAR PARA WHATSAPP</button>
   </div>
